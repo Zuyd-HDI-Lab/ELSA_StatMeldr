@@ -1,0 +1,26 @@
+<!-- api/templates/api/cbs_data.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CBS Data - Statmeldr</title>
+</head>
+<body>
+    <h1>Statmeldr: CBS Data</h1>
+    <form method="get" action="{% url 'cbs_data' %}">
+        <label for="gemeente">Kies een gemeente:</label>
+        <select name="gemeente" id="gemeente">
+            <option value="0917">Heerlen</option>
+            <option value="0935">Maastricht</option>
+        </select>
+        <button type="submit">Zoeken</button>
+    </form>
+
+    <h2>Resultaten:</h2>
+    <ul>
+        {% for row in data %}
+            <li>{{ row.WijkenEnBuurten }} - {{ row.Gemeentenaam_1 }} - {{ row.AantalInwoners_5 }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
