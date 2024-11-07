@@ -24,4 +24,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('cbs/', views.cbs_data, name='cbs_data'),
     path('', RedirectView.as_view(url='/cbs/')),  
+    path('cbs_data_csv/', views.cbs_data_csv, name='cbs_data_csv'),
 ]
