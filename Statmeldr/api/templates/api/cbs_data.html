@@ -7,15 +7,24 @@
 </head>
 <body>
     <h1>Statmeldr: CBS Data</h1>
+
+        <!-- Download knop voor CSV -->
+        <h2>Download de data als CSV:</h2>
+        <a href="{% url 'cbs_data_csv' %}?gemeente={{ request.GET.gemeente|default:'0917' }}">
+            <button type="button">Download CSV</button>
+        </a>
+        
+    <!-- Formulier voor selectie van gemeente -->
     <form method="get" action="{% url 'cbs_data' %}">
         <label for="gemeente">Kies een gemeente:</label>
         <select name="gemeente" id="gemeente">
-            <option value="0917">Heerlen</option>
-            <option value="0935">Maastricht</option>
+            <option value="0917" {% if request.GET.gemeente == '0917' %}selected{% endif %}>Heerlen</option>
+            <option value="0935" {% if request.GET.gemeente == '0935' %}selected{% endif %}>Maastricht</option>
         </select>
         <button type="submit">Zoeken</button>
     </form>
 
+    <!-- Resultaten weergave -->
     <h2>Resultaten:</h2>
     <ul>
         {% for row in data %}
