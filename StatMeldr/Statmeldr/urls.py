@@ -22,7 +22,7 @@ from api import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('cbs/', views.cbs_data, name='cbs_data'),
-    path('', RedirectView.as_view(url='/cbs/')),  
-    path('cbs_data_csv/', views.cbs_data_csv, name='cbs_data_csv'),
+    path('', views.get_filtered_data, name='get_filtered_data'),
+    path('get-data/', views.get_filtered_data, name='get_filtered_data'),
+    path('get-data-csv/', views.get_filtered_data_csv, name='get_filtered_data_csv'),
 ]

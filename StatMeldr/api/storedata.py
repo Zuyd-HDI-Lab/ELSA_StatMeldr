@@ -10,6 +10,9 @@ def store_data(ttl_seconds = 600):
         data_kerncijfers = pd.DataFrame(
             cbsodata.get_data(kerncijfers, select=['*'])
         )
+        data_kerncijfers = data_kerncijfers.applymap(
+            lambda x: x.strip() if isinstance(x, str) else x
+        ).fillna('')
         data_as_json = data_kerncijfers.to_json(orient='records')
         redis_client.setex('kerncijfers2019', ttl_seconds, data_as_json)
         print("Data succesvol opgeslagen in Redis!")

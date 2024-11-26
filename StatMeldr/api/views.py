@@ -1,62 +1,70 @@
 from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+import pandas as pd
+import redis
 import csv
-import requests
-from django.http import HttpResponse
 
-def cbs_data(request):
-    # Constant dataset ID
-    dataset_id = "84583NED"
-    url = f"https://opendata.cbs.nl/ODataApi/odata/{dataset_id}/TypedDataSet"
+def get_filtered_data(request):
+    try:
+        # Redis-client configureren
+        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-    # Haal het gemeente ID op uit de GET-parameter (standaard is Heerlen met ID '0917')
-    gemeente_id = request.GET.get('gemeente', '0917')  # '0917' voor Heerlen en '0935' voor Maastricht
+        # Data ophalen uit Redis
+        cached_data = redis_client.get('kerncijfers2019')
+        if not cached_data:
+            return render(request, 'api/cbs_data.html', {'data': []})
 
-    # Parameters voor filtering en selectie
-    params = {
-        "$select": "WijkenEnBuurten,Gemeentenaam_1,AantalInwoners_5",
-        "$filter": f"substring(WijkenEnBuurten,2,4) eq '{gemeente_id}'",
-    }
-    
-    # Verzoek uitvoeren naar de CBS API
-    response = requests.get(url, params=params)
-    data = []
-    if response.status_code == 200:
-        data = response.json().get("value", [])
-    else:
-        print("Error:", response.status_code, response.text)
+        # Omzetten van bytes naar string
+        cached_data_str = cached_data.decode('utf-8')
 
-    # Render de HTML-template met de data
-    return render(request, 'api/cbs_data.html', {'data': data})
+        # Data laden in een Pandas DataFrame
+        data_kerncijfers = pd.read_json(cached_data_str, orient='records')
+
+        # Geselecteerde gemeente ophalen (standaard: 'Heerlen')
+        selected_gemeente = request.GET.get('gemeente', 'Heerlen').strip()
+
+        # Filteren op Gemeentenaam_1
+        filtered_data = data_kerncijfers[
+            data_kerncijfers['Gemeentenaam_1'].str.strip().str.lower() == selected_gemeente.lower()
+        ][['WijkenEnBuurten', 'Gemeentenaam_1']]
+
+        # Data omzetten naar een lijst van dicts
+        data = filtered_data.to_dict(orient='records')
+
+        return render(request, 'api/cbs_data.html', {'data': data})
+    except Exception as e:
+        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
 
 
-def cbs_data_csv(request):
-    # Constant dataset ID
-    dataset_id = "84583NED"
-    url = f"https://opendata.cbs.nl/ODataApi/odata/{dataset_id}/TypedDataSet"
 
-    # Haal het gemeente ID op uit de GET-parameter
-    gemeente_id = request.GET.get('gemeente', '0917')
 
-    # Parameters voor filtering en selectie
-    params = {
-        "$select": "WijkenEnBuurten,Gemeentenaam_1,AantalInwoners_5",
-        "$filter": f"substring(WijkenEnBuurten,2,4) eq '{gemeente_id}'",
-    }
-    
-    # Verzoek uitvoeren naar de CBS API
-    response = requests.get(url, params=params)
-    data = response.json().get("value", []) if response.status_code == 200 else []
+def get_filtered_data_csv(request):
+    """
+    Haalt gefilterde data op uit Redis en retourneert deze als een CSV-bestand.
+    """
+    try:
+        # Redis-client configureren
+        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-    # Maak een HTTP-respons voor het CSV-bestand
-    csv_response = HttpResponse(content_type='text/csv')
-    csv_response['Content-Disposition'] = 'attachment; filename="cbs_data.csv"'
+        # Ophalen van data uit Redis
+        cached_data = redis_client.get('kerncijfers2019')
+        if not cached_data:
+            return JsonResponse({'error': 'Data niet gevonden in Redis'}, status=404)
 
-    # Schrijf de data naar de CSV-respons
-    if data:
-        fieldnames = data[0].keys()
-        writer = csv.DictWriter(csv_response, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in data:
-            writer.writerow(row)
+        # Laden van data in een Pandas DataFrame
+        data_kerncijfers = pd.read_json(cached_data, orient='records')
 
-    return csv_response
+        # Filteren op Gemeentenaam_1 == "Heerlen" en alleen specifieke kolommen behouden
+        filtered_data = data_kerncijfers[
+            data_kerncijfers['Gemeentenaam_1'] == 'Heerlen'
+        ][['WijkenEnBuurten', 'Gemeentenaam_1']]
+
+        # HTTP-respons voor CSV-bestand
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="filtered_data.csv"'
+
+        # Schrijf de gefilterde data naar het CSV-bestand
+        filtered_data.to_csv(response, index=False)
+        return response
+    except Exception as e:
+        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
