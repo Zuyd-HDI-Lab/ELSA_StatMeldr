@@ -1,62 +1,60 @@
 from django.shortcuts import render
-import csv
-import requests
-from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
+import pandas as pd
+import redis
+import json
 
-def cbs_data(request):
-    # Constant dataset ID
-    dataset_id = "84583NED"
-    url = f"https://opendata.cbs.nl/ODataApi/odata/{dataset_id}/TypedDataSet"
+def get_filtered_data(request):
+    try:
+        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-    # Haal het gemeente ID op uit de GET-parameter (standaard is Heerlen met ID '0917')
-    gemeente_id = request.GET.get('gemeente', '0917')  # '0917' voor Heerlen en '0935' voor Maastricht
+        selected_gemeente = request.GET.get('gemeente', 'Heerlen').strip().lower()
+        key = f"kerncijfers:{selected_gemeente}"
 
-    # Parameters voor filtering en selectie
-    params = {
-        "$select": "WijkenEnBuurten,Gemeentenaam_1,AantalInwoners_5",
-        "$filter": f"substring(WijkenEnBuurten,2,4) eq '{gemeente_id}'",
-    }
-    
-    # Verzoek uitvoeren naar de CBS API
-    response = requests.get(url, params=params)
-    data = []
-    if response.status_code == 200:
-        data = response.json().get("value", [])
-    else:
-        print("Error:", response.status_code, response.text)
+        print(f"Op te halen sleutel: {key}")
 
-    # Render de HTML-template met de data
-    return render(request, 'api/cbs_data.html', {'data': data})
+        cached_data = redis_client.get(key)
+        if not cached_data:
+            return render(request, 'api/cbs_data.html', {'data': []})
 
 
-def cbs_data_csv(request):
-    # Constant dataset ID
-    dataset_id = "84583NED"
-    url = f"https://opendata.cbs.nl/ODataApi/odata/{dataset_id}/TypedDataSet"
+        json_data = json.loads(cached_data) #json gebruiken ipv pandas, pandas geeft future error warnings dat pd.read_json depricated wordt
+        print(f"Geparsed JSON data: {json_data[:3]}")  
 
-    # Haal het gemeente ID op uit de GET-parameter
-    gemeente_id = request.GET.get('gemeente', '0917')
+        filtered_data = [
+            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
+            for item in json_data
+        ]
 
-    # Parameters voor filtering en selectie
-    params = {
-        "$select": "WijkenEnBuurten,Gemeentenaam_1,AantalInwoners_5",
-        "$filter": f"substring(WijkenEnBuurten,2,4) eq '{gemeente_id}'",
-    }
-    
-    # Verzoek uitvoeren naar de CBS API
-    response = requests.get(url, params=params)
-    data = response.json().get("value", []) if response.status_code == 200 else []
+        return render(request, 'api/cbs_data.html', {'data': filtered_data})
+    except Exception as e:
+        print(f"Er is een fout opgetreden: {e}")
+        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
 
-    # Maak een HTTP-respons voor het CSV-bestand
-    csv_response = HttpResponse(content_type='text/csv')
-    csv_response['Content-Disposition'] = 'attachment; filename="cbs_data.csv"'
 
-    # Schrijf de data naar de CSV-respons
-    if data:
-        fieldnames = data[0].keys()
-        writer = csv.DictWriter(csv_response, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in data:
-            writer.writerow(row)
 
-    return csv_response
+def get_filtered_data_csv(request):
+    """
+    Haalt gefilterde data op uit Redis en retourneert deze als een CSV-bestand.
+    """
+    try:
+        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
+
+        cached_data = redis_client.get('kerncijfers2019')
+        if not cached_data:
+            return JsonResponse({'error': 'Data niet gevonden in Redis'}, status=404)
+
+        json_data = json.loads(cached_data)
+
+        filtered_data = [
+            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
+            for item in json_data
+        ]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="filtered_data.csv"'
+
+        filtered_data.to_csv(response, index=False)
+        return response
+    except Exception as e:
+        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
