@@ -38,27 +38,22 @@ def get_filtered_data_csv(request):
     Haalt gefilterde data op uit Redis en retourneert deze als een CSV-bestand.
     """
     try:
-        # Redis-client configureren
         redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-        # Ophalen van data uit Redis
         cached_data = redis_client.get('kerncijfers2019')
         if not cached_data:
             return JsonResponse({'error': 'Data niet gevonden in Redis'}, status=404)
 
-        # Laden van data in een Pandas DataFrame
-        data_kerncijfers = pd.read_json(cached_data, orient='records')
+        json_data = json.loads(cached_data)
 
-        # Filteren op Gemeentenaam_1 == "Heerlen" en alleen specifieke kolommen behouden
-        filtered_data = data_kerncijfers[
-            data_kerncijfers['Gemeentenaam_1'] == 'Heerlen'
-        ][['WijkenEnBuurten', 'Gemeentenaam_1']]
+        filtered_data = [
+            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
+            for item in json_data
+        ]
 
-        # HTTP-respons voor CSV-bestand
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="filtered_data.csv"'
 
-        # Schrijf de gefilterde data naar het CSV-bestand
         filtered_data.to_csv(response, index=False)
         return response
     except Exception as e:

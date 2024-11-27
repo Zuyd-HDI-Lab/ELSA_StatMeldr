@@ -7,11 +7,10 @@ def store_data(ttl_seconds=600):
     try:
         redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-        # Data ophalen
         kerncijfers = "84583NED"
         data_kerncijfers = pd.DataFrame(cbsodata.get_data(kerncijfers, select=['*']))
 
-        # Opschonen van data
+        #data binnen cbs heeft veel whitespaces en andere rotzooi, met deze code kan je dat eruit halen
         data_kerncijfers = data_kerncijfers.applymap(
             lambda x: x.strip() if isinstance(x, str) else x
         ).fillna('')
@@ -20,7 +19,7 @@ def store_data(ttl_seconds=600):
             print("Geen data opgehaald uit CBS API.")
             return
         
-        # Opslaan in Redis per gemeente
+        #de data wordt nu opgeslagen per gemeente groep, hiermee kan je makkelijker data ophalen per gemeente.
         for gemeente, group in data_kerncijfers.groupby('Gemeentenaam_1'):
             key = f"kerncijfers:{gemeente.strip().lower()}"
             print(f"Opslaan sleutel: {key}")
