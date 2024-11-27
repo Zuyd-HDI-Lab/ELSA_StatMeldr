@@ -2,39 +2,34 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 import pandas as pd
 import redis
-import csv
+import json
 
 def get_filtered_data(request):
     try:
-        # Redis-client configureren
         redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-        # Data ophalen uit Redis
-        cached_data = redis_client.get('kerncijfers2019')
+        selected_gemeente = request.GET.get('gemeente', 'Heerlen').strip().lower()
+        key = f"kerncijfers:{selected_gemeente}"
+
+        print(f"Op te halen sleutel: {key}")
+
+        cached_data = redis_client.get(key)
         if not cached_data:
             return render(request, 'api/cbs_data.html', {'data': []})
 
-        # Omzetten van bytes naar string
-        cached_data_str = cached_data.decode('utf-8')
 
-        # Data laden in een Pandas DataFrame
-        data_kerncijfers = pd.read_json(cached_data_str, orient='records')
+        json_data = json.loads(cached_data) #json gebruiken ipv pandas, pandas geeft future error warnings dat pd.read_json depricated wordt
+        print(f"Geparsed JSON data: {json_data[:3]}")  
 
-        # Geselecteerde gemeente ophalen (standaard: 'Heerlen')
-        selected_gemeente = request.GET.get('gemeente', 'Heerlen').strip()
+        filtered_data = [
+            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
+            for item in json_data
+        ]
 
-        # Filteren op Gemeentenaam_1
-        filtered_data = data_kerncijfers[
-            data_kerncijfers['Gemeentenaam_1'].str.strip().str.lower() == selected_gemeente.lower()
-        ][['WijkenEnBuurten', 'Gemeentenaam_1']]
-
-        # Data omzetten naar een lijst van dicts
-        data = filtered_data.to_dict(orient='records')
-
-        return render(request, 'api/cbs_data.html', {'data': data})
+        return render(request, 'api/cbs_data.html', {'data': filtered_data})
     except Exception as e:
+        print(f"Er is een fout opgetreden: {e}")
         return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
-
 
 
 
