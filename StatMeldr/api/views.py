@@ -24,7 +24,7 @@ def get_filtered_data(request):
 
         json_data = json.loads(cached_data)
         filtered_data = [
-            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
+            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1', 'AantalInwoners_5']}
             for item in json_data
         ]
 

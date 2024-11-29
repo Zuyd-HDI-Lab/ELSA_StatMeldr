@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>CBS Data - Statmeldr</title>
+    <style>
+        table {
+            width: auto; 
+            table-layout: auto; 
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <h1>Statmeldr: CBS Data</h1>
 
     <!-- Download knop voor CSV -->
     <h2>Download de data als CSV:</h2>
-    <a href="{% url 'get_filtered_data_csv' %}?gemeente={{ selected_gemeente }}">
+    <a href="{% url 'get_filtered_data_csv' %}?gemeente={{ request.GET.gemeente|default:'Heerlen' }}">
         <button type="button">Download CSV</button>
     </a>
     
@@ -22,18 +41,31 @@
                     {{ gemeente }}
                 </option>
             {% endfor %}
-        </select>        
+        </select>
         <button type="submit">Zoeken</button>
     </form>
 
     <!-- Resultaten weergave -->
     <h2>Resultaten:</h2>
     {% if data %}
-        <ul>
-            {% for row in data %}
-                <li>{{ row.WijkenEnBuurten }} - {{ row.Gemeentenaam_1 }}</li>
-            {% endfor %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in data.0.keys %}
+                        <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        {% for value in row.values %}
+                            <td>{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>Geen data gevonden voor de geselecteerde gemeente.</p>
     {% endif %}
