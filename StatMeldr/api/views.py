@@ -1,66 +1,82 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-import pandas as pd
+from django.http import HttpResponse
+import csv
 import redis
 import json
 
 def get_filtered_data(request):
-    try:
-        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0) # verander dit naar IP en port van live server (wanneer live)
+    redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-        keys = redis_client.keys('kerncijfers:*')
-        gemeenten = sorted([key.decode('utf-8').split(':')[1].title() for key in keys]) #hier worden de gemeentenamen alftabetisch gezet, en wordt een Title Case toegepast
+    # Haal de geselecteerde gemeente en jaar op
+    selected_gemeente = request.GET.get('gemeente', 'Heerlen').strip()
+    selected_jaar = request.GET.get('jaar', '2019')
 
-        selected_gemeente = request.GET.get('gemeente', gemeenten[0] if gemeenten else '').strip().lower()
-        key = f"kerncijfers:{selected_gemeente}"
+    # Maak de sleutel met lowercase gemeente en jaar
+    redis_key = f"kerncijfers:{selected_jaar}:{selected_gemeente.lower()}"
+    print(f"Op te halen sleutel: {redis_key}")
 
-        print(f"Op te halen sleutel: {key}")
+    stored_data = redis_client.get(redis_key)
 
-        cached_data = redis_client.get(key)
-        if not cached_data:
-            print("Geen data gevonden in Redis voor deze sleutel.")
-            return render(request, 'api/cbs_data.html', {'data': [], 'gemeenten': gemeenten, 'selected_gemeente': selected_gemeente})
-
-
-        json_data = json.loads(cached_data)
-        filtered_data = [
-            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1', 'AantalInwoners_5']}
-            for item in json_data
-        ]
-
+    # Controleer of data beschikbaar is
+    if not stored_data:
+        print(f"Geen data gevonden in Redis voor de sleutel: {redis_key}")
         return render(request, 'api/cbs_data.html', {
-            'data': filtered_data,
-            'gemeenten': gemeenten,
-            'selected_gemeente': selected_gemeente
+            'data': None,
+            'gemeenten': sorted([
+                k.decode().split(":")[2].capitalize()
+                for k in redis_client.keys(f"kerncijfers:{selected_jaar}:*")
+            ]),
+            'jaren': sorted(set([
+                k.decode().split(":")[1]
+                for k in redis_client.keys("kerncijfers:*:*")
+            ])),
+            'selected_gemeente': selected_gemeente,
+            'selected_jaar': selected_jaar,
         })
-    except Exception as e:
-        print(f"Er is een fout opgetreden: {e}")
-        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
 
+    # Decodeer de bytes naar een string en laad de JSON-data
+    data = json.loads(stored_data.decode())
+
+    return render(request, 'api/cbs_data.html', {
+        'data': data,
+        'gemeenten': sorted([
+            k.decode().split(":")[2].capitalize()
+            for k in redis_client.keys(f"kerncijfers:{selected_jaar}:*")
+        ]),
+        'jaren': sorted(set([
+            k.decode().split(":")[1]
+            for k in redis_client.keys("kerncijfers:*:*")
+        ])),
+        'selected_gemeente': selected_gemeente,
+        'selected_jaar': selected_jaar,
+    })
 
 
 def get_filtered_data_csv(request):
-    """
-    Haalt gefilterde data op uit Redis en retourneert deze als een CSV-bestand.
-    """
-    try:
-        redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
+    redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
-        cached_data = redis_client.get('kerncijfers2019')
-        if not cached_data:
-            return JsonResponse({'error': 'Data niet gevonden in Redis'}, status=404)
+    # Haal de geselecteerde gemeente en jaar op uit de request
+    selected_gemeente = request.GET.get('gemeente', 'heerlen').lower()
+    selected_jaar = request.GET.get('jaar', '2019')
 
-        json_data = json.loads(cached_data)
+    # Op te halen sleutel in Redis
+    redis_key = f"kerncijfers:{selected_jaar}:{selected_gemeente}"
+    print(f"Op te halen sleutel voor CSV: {redis_key}")
+    stored_data = redis_client.get(redis_key)
 
-        filtered_data = [
-            {key: item[key] for key in ['WijkenEnBuurten', 'Gemeentenaam_1']}
-            for item in json_data
-        ]
+    # Controleer of data beschikbaar is
+    if not stored_data:
+        return HttpResponse("Geen data gevonden voor de geselecteerde gemeente en jaartal.", status=404)
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="filtered_data.csv"'
+    # Laad data en maak CSV-respons
+    data = json.loads(stored_data)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="kerncijfers_{selected_gemeente}_{selected_jaar}.csv"'
 
-        filtered_data.to_csv(response, index=False)
-        return response
-    except Exception as e:
-        return JsonResponse({'error': f'Er is een fout opgetreden: {e}'}, status=500)
+    # Schrijf data naar CSV
+    if data:
+        writer = csv.DictWriter(response, fieldnames=data[0].keys())
+        writer.writeheader()
+        writer.writerows(data)
+
+    return response
