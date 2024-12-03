@@ -5,8 +5,8 @@
     <title>CBS Data - Statmeldr</title>
     <style>
         table {
-            width: auto; 
-            table-layout: auto; 
+            width: auto;
+            table-layout: auto;
             border-collapse: collapse;
             margin-top: 20px;
         }
@@ -28,11 +28,11 @@
 
     <!-- Download knop voor CSV -->
     <h2>Download de data als CSV:</h2>
-    <a href="{% url 'get_filtered_data_csv' %}?gemeente={{ request.GET.gemeente|default:'Heerlen' }}">
+    <a href="{% url 'get_filtered_data_csv' %}?gemeente={{ request.GET.gemeente|default:'heerlen' }}&jaar={{ request.GET.jaar|default:'2019' }}">
         <button type="button">Download CSV</button>
     </a>
     
-    <!-- Formulier voor selectie van gemeente -->
+    <!-- Formulier voor selectie -->
     <form method="get" action="{% url 'get_filtered_data' %}">
         <label for="gemeente">Kies een gemeente:</label>
         <select name="gemeente" id="gemeente">
@@ -42,6 +42,17 @@
                 </option>
             {% endfor %}
         </select>
+
+        <label for="jaar">Kies een jaartal:</label>
+        <select name="jaar" id="jaar">
+            {% for jaar in jaren %}
+                <option value="{{ jaar }}" {% if jaar == selected_jaar %}selected{% endif %}>
+                    {{ jaar }}
+                </option>
+            {% endfor %}
+        </select>
+        
+
         <button type="submit">Zoeken</button>
     </form>
 
@@ -67,7 +78,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>Geen data gevonden voor de geselecteerde gemeente.</p>
+        <p>Geen data gevonden voor de geselecteerde gemeente en jaartal.</p>
     {% endif %}
 </body>
 </html>
