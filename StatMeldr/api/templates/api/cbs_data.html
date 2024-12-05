@@ -5,40 +5,31 @@
     <title>CBS Data - Statmeldr</title>
     <style>
         table {
-            width: auto;
-            table-layout: auto;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
+            width: auto;
+            margin-left: 0;
         }
         th, td {
-            padding: 10px;
+            border: 1px solid #ddd;
             text-align: left;
-            white-space: nowrap;
+            padding: 8px;
         }
         th {
             background-color: #f2f2f2;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <h1>Statmeldr: CBS Data</h1>
 
-    <!-- Download knop voor CSV -->
-    <h2>Download de data als CSV:</h2>
-    <a href="{% url 'get_filtered_data_csv' %}?gemeente={{ request.GET.gemeente|default:'heerlen' }}&jaar={{ request.GET.jaar|default:'2019' }}">
-        <button type="button">Download CSV</button>
-    </a>
-    
-    <!-- Formulier voor selectie -->
+    <!-- Formulier voor dataset selectie -->
     <form method="get" action="{% url 'get_filtered_data' %}">
-        <label for="gemeente">Kies een gemeente:</label>
-        <select name="gemeente" id="gemeente">
-            {% for gemeente in gemeenten %}
-                <option value="{{ gemeente }}" {% if gemeente == selected_gemeente %}selected{% endif %}>
-                    {{ gemeente }}
+        <label for="dataset">Kies een dataset:</label>
+        <select name="dataset" id="dataset">
+            {% for dataset in datasets %}
+                <option value="{{ dataset|lower }}" {% if selected_dataset == dataset|lower %}selected{% endif %}>
+                    {{ dataset }}
                 </option>
             {% endfor %}
         </select>
@@ -46,17 +37,31 @@
         <label for="jaar">Kies een jaartal:</label>
         <select name="jaar" id="jaar">
             {% for jaar in jaren %}
-                <option value="{{ jaar }}" {% if jaar == selected_jaar %}selected{% endif %}>
+                <option value="{{ jaar }}" {% if selected_jaar == jaar %}selected{% endif %}>
                     {{ jaar }}
                 </option>
             {% endfor %}
         </select>
-        
+
+        <label for="gemeente">Kies een gemeente:</label>
+        <select name="gemeente" id="gemeente">
+            {% for gemeente in gemeentes %}
+            <option value="{{ gemeente|lower }}" {% if gemeente|lower == request.GET.gemeente|lower %}selected{% endif %}>
+                {{ gemeente }}
+            </option>
+            {% endfor %}
+        </select>
 
         <button type="submit">Zoeken</button>
     </form>
 
-    <!-- Resultaten weergave -->
+    <!-- Download knop voor CSV -->
+    <h2>Download de data als CSV:</h2>
+    <a href="{% url 'get_filtered_data_csv' %}?dataset={{ selected_dataset }}&jaar={{ selected_jaar }}&gemeente={{ selected_gemeente }}">
+        <button type="button">Download CSV</button>
+    </a>
+
+    <!-- Resultaten tabel -->
     <h2>Resultaten:</h2>
     {% if data %}
         <table>
@@ -78,7 +83,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>Geen data gevonden voor de geselecteerde gemeente en jaartal.</p>
+        <p>Geen data gevonden voor de geselecteerde opties.</p>
     {% endif %}
 </body>
 </html>
