@@ -23,6 +23,11 @@
 <body>
     <h1>Statmeldr: CBS Data</h1>
 
+    <nav>
+        <a href="{% url 'get_filtered_data' %}">CBS Data</a> | 
+        <a href="{% url 'get_rivm_data' %}">RIVM Data</a>
+    </nav>
+    
     <!-- Formulier voor dataset selectie -->
     <form method="get" action="{% url 'get_filtered_data' %}">
         <label for="dataset">Kies een dataset:</label>
