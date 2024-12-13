@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RIVM Data</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: auto;
+            margin-left: 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>RIVM Data</h1>
+
+    <nav>
+        <a href="{% url 'get_filtered_data' %}">CBS Data</a> | 
+        <a href="{% url 'get_rivm_data' %}">RIVM Data</a>
+    </nav>
+    
+    <h1>RIVM Data</h1>
+
+    <form method="get" action="{% url 'get_rivm_data' %}">
+        <label for="gemeente">Kies een gemeente:</label>
+        <select name="gemeente" id="gemeente">
+            {% for gemeente in gemeentes %}
+            <option value="{{ gemeente|lower }}" {% if gemeente|lower == selected_gemeente|lower %}selected{% endif %}>
+                {{ gemeente }}
+            </option>
+            {% endfor %}
+        </select>
+    
+        <label for="period">Kies een periode:</label>
+        <select name="period" id="period">
+            {% for period in perioden %}
+            <option value="{{ period }}" {% if period == selected_period %}selected{% endif %}>
+                {{ period }}
+            </option>
+            {% endfor %}
+        </select>
+    
+        <label for="age">Kies een leeftijd:</label>
+        <select name="age" id="age">
+            {% for age in leeftijden %}
+            <option value="{{ age }}" {% if age == selected_age %}selected{% endif %}>
+                {{ age }}
+            </option>
+            {% endfor %}
+        </select>
+    
+        <button type="submit">Zoeken</button>
+    </form>
+    
+    <h2>Resultaten:</h2>
+    {% if data %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in data.0.keys %}
+                <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                {% for value in row.values %}
+                <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Geen data gevonden.</p>
+    {% endif %}
+    
+</body>
+</html>
