@@ -25,11 +25,10 @@ def store_cbs_data(ttl_seconds=1200):
                 print(f"Ophalen dataset: {dataset_name}, jaar: {year}, id: {dataset_id}")
                 data = pd.DataFrame(cbsodata.get_data(dataset_id, select=["*"]))
 
-                # Schoonmaken van de data
                 for column in data.select_dtypes(include=['object']):
                     data[column] = data[column].map(lambda x: x.strip() if isinstance(x, str) else x)
 
-                # Data splitsen per gemeente groep, en dan opslaan.
+                # Data splitsen per gemeente groep, en dan opslaan. Je kan de groupby met elke kolom doen in de tabel.
                 for gemeente, group in data.groupby("Gemeentenaam_1"):
                         gemeente = gemeente.strip()  
                         if not gemeente: 
