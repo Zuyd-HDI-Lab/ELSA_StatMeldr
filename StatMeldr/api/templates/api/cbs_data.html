@@ -60,11 +60,12 @@
         <button type="submit">Zoeken</button>
     </form>
 
-    <!-- Download knop voor CSV -->
-    <h2>Download de data als CSV:</h2>
-    <a href="{% url 'get_filtered_data_csv' %}?dataset={{ selected_dataset }}&jaar={{ selected_jaar }}&gemeente={{ selected_gemeente }}">
-        <button type="button">Download CSV</button>
-    </a>
+<!-- Download knop voor CSV -->
+<h2>Download de data als CSV:</h2>
+<a href="{% url 'get_filtered_data_csv' %}?dataset={{ selected_dataset }}{% if selected_jaar %}&jaar={{ selected_jaar }}{% endif %}{% if selected_periode %}&periode={{ selected_periode }}{% endif %}{% if selected_leeftijd %}&leeftijd={{ selected_leeftijd }}{% endif %}{% if selected_gemeente %}&gemeente={{ selected_gemeente|lower|urlencode }}{% endif %}">
+    <button type="button">Download CSV</button>
+</a>
+
 
     <!-- Resultaten tabel -->
     <h2>Resultaten:</h2>

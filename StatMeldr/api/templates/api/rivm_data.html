@@ -61,6 +61,13 @@
         <button type="submit">Zoeken</button>
     </form>
     
+    <!-- Download knop voor CSV -->
+    <h2>Download de geselecteerde RIVM-data als CSV:</h2>
+    <a href="{% url 'get_filtered_data_csv' %}?dataset=rivm{% if selected_periode %}&periode={{ selected_periode }}{% endif %}{% if selected_leeftijd %}&leeftijd={{ selected_leeftijd }}{% endif %}{% if selected_gemeente %}&gemeente={{ selected_gemeente|lower|urlencode }}{% endif %}">
+        <button type="button">Download CSV</button>
+    </a>
+    
+
     <h2>Resultaten:</h2>
     {% if data %}
     <table>

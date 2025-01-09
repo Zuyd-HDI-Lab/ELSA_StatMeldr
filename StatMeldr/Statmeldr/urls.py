@@ -25,5 +25,5 @@ urlpatterns = [
     path('', views.get_filtered_data, name='get_filtered_data'),
     path('rivm/', views.get_rivm_data, name='get_rivm_data'),
     path('cbs/', views.get_filtered_data, name='get_filtered_data'),
-    path('get-data-csv/', views.get_filtered_data_csv, name='get_filtered_data_csv'),
+    path('download_csv/', views.get_filtered_data_csv, name='get_filtered_data_csv'),
 ]
