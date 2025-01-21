@@ -104,7 +104,7 @@ def get_filtered_data_csv(request):
     selected_dataset = request.GET.get('dataset')
     selected_gemeente = request.GET.get('gemeente', '').lower()
     selected_jaar = request.GET.get('jaar', '')
-    selected_periode = request.GET.get('periode', '')
+    selected_periode = request.GET.get('perioden', '')
     selected_leeftijd = request.GET.get('leeftijd', '')
 
     if not selected_dataset or not selected_gemeente:
