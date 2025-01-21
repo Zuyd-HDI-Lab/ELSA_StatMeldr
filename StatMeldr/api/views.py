@@ -6,7 +6,7 @@ import csv
 import redis
 import json
 
-def get_filtered_data(request):
+def get_cbs_data(request):
     redis_client = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 
     selected_dataset = request.GET.get('dataset', 'kerncijfers').lower()
@@ -91,7 +91,7 @@ def get_rivm_data(request):
         'selected_gemeente': selected_gemeente,
         'selected_periode': selected_period,
         'selected_leeftijd': selected_age,
-        'periodes': ['2020JJ00', '2022JJ00'],
+        'perioden': ['2020JJ00', '2022JJ00'],
         'leeftijden': ['20300', '53115', '80200']
     })
 

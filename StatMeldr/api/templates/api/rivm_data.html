@@ -21,26 +21,16 @@
     </style>
 </head>
 <body>
+ 
     <h1>RIVM Data</h1>
 
     <nav>
-        <a href="{% url 'get_filtered_data' %}">CBS Data</a> | 
+        <a href="{% url 'get_cbs_data' %}">CBS Data</a> | 
         <a href="{% url 'get_rivm_data' %}">RIVM Data</a>
     </nav>
-    
-    <h1>RIVM Data</h1>
 
     <form method="get" action="{% url 'get_rivm_data' %}">
-        <label for="gemeente">Kies een gemeente:</label>
-        <select name="gemeente" id="gemeente">
-            {% for gemeente in gemeentes %}
-            <option value="{{ gemeente|lower }}" {% if gemeente|lower == selected_gemeente|lower %}selected{% endif %}>
-                {{ gemeente }}
-            </option>
-            {% endfor %}
-        </select>
-    
-        <label for="period">Kies een periode:</label>
+        <label for="period">Kies een jaartal:</label>
         <select name="period" id="period">
             {% for period in perioden %}
             <option value="{{ period }}" {% if period == selected_period %}selected{% endif %}>
@@ -57,12 +47,21 @@
             </option>
             {% endfor %}
         </select>
+        
+        <label for="gemeente">Kies een gemeente:</label>
+        <select name="gemeente" id="gemeente">
+            {% for gemeente in gemeentes %}
+            <option value="{{ gemeente|lower }}" {% if gemeente|lower == selected_gemeente|lower %}selected{% endif %}>
+                {{ gemeente }}
+            </option>
+            {% endfor %}
+        </select>
     
         <button type="submit">Zoeken</button>
     </form>
     
     <!-- Download knop voor CSV -->
-    <h2>Download de geselecteerde RIVM-data als CSV:</h2>
+    <h2>Download de geselecteerde data als CSV:</h2>
     <a href="{% url 'get_filtered_data_csv' %}?dataset=rivm{% if selected_periode %}&periode={{ selected_periode }}{% endif %}{% if selected_leeftijd %}&leeftijd={{ selected_leeftijd }}{% endif %}{% if selected_gemeente %}&gemeente={{ selected_gemeente|lower|urlencode }}{% endif %}">
         <button type="button">Download CSV</button>
     </a>

@@ -24,12 +24,12 @@
     <h1>Statmeldr: CBS Data</h1>
 
     <nav>
-        <a href="{% url 'get_filtered_data' %}">CBS Data</a> | 
+        <a href="{% url 'get_cbs_data' %}">CBS Data</a> | 
         <a href="{% url 'get_rivm_data' %}">RIVM Data</a>
     </nav>
     
     <!-- Formulier voor dataset selectie -->
-    <form method="get" action="{% url 'get_filtered_data' %}">
+    <form method="get" action="{% url 'get_cbs_data' %}">
         <label for="dataset">Kies een dataset:</label>
         <select name="dataset" id="dataset">
             {% for dataset in datasets %}
@@ -61,7 +61,7 @@
     </form>
 
 <!-- Download knop voor CSV -->
-<h2>Download de data als CSV:</h2>
+<h2>Download de geselecteerde data als CSV:</h2>
 <a href="{% url 'get_filtered_data_csv' %}?dataset={{ selected_dataset }}{% if selected_jaar %}&jaar={{ selected_jaar }}{% endif %}{% if selected_periode %}&periode={{ selected_periode }}{% endif %}{% if selected_leeftijd %}&leeftijd={{ selected_leeftijd }}{% endif %}{% if selected_gemeente %}&gemeente={{ selected_gemeente|lower|urlencode }}{% endif %}">
     <button type="button">Download CSV</button>
 </a>
@@ -89,7 +89,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>Geen data gevonden voor de geselecteerde opties.</p>
+        <p>Geen data gevonden.</p>
     {% endif %}
 </body>
 </html>
